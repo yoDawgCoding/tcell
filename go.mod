@@ -11,4 +11,7 @@ require (
 	golang.org/x/text v0.28.0
 )
 
-require github.com/rivo/uniseg v0.4.3 // indirect
+require (
+	github.com/gdamore/tcell/v2 v2.9.0 // indirect
+	github.com/rivo/uniseg v0.4.3 // indirect
+)
