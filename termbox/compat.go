@@ -19,7 +19,7 @@ package termbox
 import (
 	"errors"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/yoDawgCoding/tcell/v2"
 )
 
 var screen tcell.Screen
@@ -28,7 +28,7 @@ var outMode OutputMode
 // Init initializes the screen for use.
 func Init() error {
 	outMode = OutputNormal
-	if s, e := tcell.NewScreen(); e != nil {
+	if s, e := tcell.NewCompat().GetCompatibleScreen(); e != nil {
 		return e
 	} else if e = s.Init(); e != nil {
 		return e

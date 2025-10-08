@@ -1,4 +1,4 @@
-module github.com/gdamore/tcell/v2
+module github.com/yoDawgCoding/tcell/v2
 
 go 1.23.0
 
